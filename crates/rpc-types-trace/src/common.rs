@@ -1,4 +1,4 @@
-//! Types used by tracing backends.
+ //! Types used by tracing backends.
 
 use alloy_primitives::TxHash;
 use serde::{Deserialize, Serialize};
@@ -12,7 +12,12 @@ pub enum TraceResult<Ok, Err> {
         /// Trace results produced by the tracer
         result: Ok,
         /// transaction hash
-        #[serde(skip_serializing_if = "Option::is_none", rename = "txHash")]
+        #[serde(
+            skip_serializing_if = "Option::is_none",
+            rename = "txHash",
+            alias = "transactionHash",
+            alias = "transaction_hash"
+        )]
         #[doc(alias = "transaction_hash")]
         tx_hash: Option<TxHash>,
     },
@@ -21,7 +26,12 @@ pub enum TraceResult<Ok, Err> {
         /// Trace failure produced by the tracer
         error: Err,
         /// transaction hash
-        #[serde(skip_serializing_if = "Option::is_none", rename = "txHash")]
+        #[serde(
+            skip_serializing_if = "Option::is_none",
+            rename = "txHash",
+            alias = "transactionHash",
+            alias = "transaction_hash"
+        )]
         #[doc(alias = "transaction_hash")]
         tx_hash: Option<TxHash>,
     },
@@ -109,5 +119,22 @@ mod tests {
         assert_eq!(error_result.tx_hash(), tx_hash);
         assert_eq!(error_result.success(), None);
         assert_eq!(error_result.error(), Some(&ErrResult { code: 404 }));
+    }
+    
+    #[test]
+    fn test_trace_result_tx_hash_aliases() {
+        let tx_hash = TxHash::ZERO;
+
+        let camel: TraceResult<OkResult, ErrResult> = serde_json::from_str(
+            r#"{"result":{"message":"ok"},"transactionHash":"0x0000000000000000000000000000000000000000000000000000000000000000"}"#,
+        )
+        .unwrap();
+        assert_eq!(camel.tx_hash(), Some(tx_hash));
+
+        let snake: TraceResult<OkResult, ErrResult> = serde_json::from_str(
+            r#"{"result":{"message":"ok"},"transaction_hash":"0x0000000000000000000000000000000000000000000000000000000000000000"}"#,
+        )
+        .unwrap();
+        assert_eq!(snake.tx_hash(), Some(tx_hash));
     }
 }
